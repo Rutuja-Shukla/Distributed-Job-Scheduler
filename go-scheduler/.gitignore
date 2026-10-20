@@ -1,0 +1,32 @@
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.out
+
+# Test artifacts
+coverage.out
+*.test
+*.prof
+
+# Dependencies
+vendor/
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# OS and IDE files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local

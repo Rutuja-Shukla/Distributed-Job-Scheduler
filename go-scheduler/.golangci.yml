@@ -1,0 +1,23 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - gosec
+    - misspell
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+  gosec:
+    excludes:
+      - G404 # Insecure random number source (used for backoff jitter, not crypto)

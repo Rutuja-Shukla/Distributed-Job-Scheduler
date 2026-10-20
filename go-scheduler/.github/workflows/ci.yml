@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    name: Build, Lint & Race Detector
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgrespassword
+          POSTGRES_DB: scheduler
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          check-latest: true
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.56.2
+          args: --timeout=5m
+
+      - name: Run Unit & Race Detector Tests
+        env:
+          DATABASE_URL: "postgres://postgres:postgrespassword@localhost:5432/scheduler?sslmode=disable"
+        run: |
+          go test -v -race -coverprofile=coverage.out -timeout 10m ./...
+
+      - name: Run Fuzz Tests
+        run: |
+          go test -v -fuzz=FuzzParseCron -fuzztime=15s ./tests/fuzz/...
+
+      - name: Report Coverage
+        run: |
+          go tool cover -func=coverage.out

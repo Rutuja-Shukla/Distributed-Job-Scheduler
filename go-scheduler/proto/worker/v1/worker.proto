@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+package worker.v1;
+
+option go_package = "github.com/distributed-scheduler/job-scheduler/pkg/worker/v1;workerv1";
+
+import "google/protobuf/timestamp.proto";
+
+service WorkerService {
+  // ClaimJob allows an authenticated worker to atomically claim the next available job
+  // using SELECT ... FOR UPDATE SKIP LOCKED with a lease duration.
+  rpc ClaimJob(ClaimJobRequest) returns (ClaimJobResponse);
+
+  // Heartbeat periodically extends an active lease to prevent job reclamation.
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+
+  // CompleteJob marks the job completed and stores execution output atomically.
+  rpc CompleteJob(CompleteJobRequest) returns (CompleteJobResponse);
+
+  // FailJob records failure, checks attempts, and schedules retry with backoff or moves to DLQ.
+  rpc FailJob(FailJobRequest) returns (FailJobResponse);
+
+  // ReleaseJob yields a job back to the queue immediately (e.g. during graceful shutdown).
+  rpc ReleaseJob(ReleaseJobRequest) returns (ReleaseJobResponse);
+}
+
+message ClaimJobRequest {
+  string worker_id = 1;
+  string queue = 2;
+  int32 lease_duration_seconds = 3;
+}
+
+message Job {
+  string id = 1;
+  string queue = 2;
+  string tenant_id = 3;
+  string type = 4;
+  bytes payload = 5;
+  int32 priority = 6;
+  int32 attempt = 7;
+  int32 max_attempts = 8;
+  google.protobuf.Timestamp lease_expires_at = 9;
+}
+
+message ClaimJobResponse {
+  bool has_job = 1;
+  Job job = 2;
+}
+
+message HeartbeatRequest {
+  string job_id = 1;
+  string worker_id = 2;
+  int32 extension_seconds = 3;
+}
+
+message HeartbeatResponse {
+  bool acknowledged = 1;
+  google.protobuf.Timestamp new_lease_expires_at = 2;
+  string error_message = 3;
+}
+
+message CompleteJobRequest {
+  string job_id = 1;
+  string worker_id = 2;
+  bytes result = 3;
+}
+
+message CompleteJobResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message FailJobRequest {
+  string job_id = 1;
+  string worker_id = 2;
+  string error_message = 3;
+}
+
+message FailJobResponse {
+  bool will_retry = 1;
+  int32 next_attempt = 2;
+  google.protobuf.Timestamp retry_at = 3;
+  bool moved_to_dlq = 4;
+}
+
+message ReleaseJobRequest {
+  string job_id = 1;
+  string worker_id = 2;
+}
+
+message ReleaseJobResponse {
+  bool released = 1;
+}

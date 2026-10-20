@@ -1,0 +1,6 @@
+{
+  "name": "Go Distributed Job Scheduler",
+  "description": "Production-grade durable multi-worker job execution engine with PostgreSQL SKIP LOCKED leases, gRPC protocol, heartbeats, dead-letter queue, leader election, and interactive visual architecture dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
